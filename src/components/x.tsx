@@ -1,5 +1,8 @@
 import styled from "styled-components";
 import { ITweet } from "./timeline";
+import { auth, db, storage } from "../firebase";
+import { deleteDoc, doc } from "firebase/firestore";
+import { deleteObject, ref } from "firebase/storage";
 
 const Wrapper = styled.div`
   display: grid;
@@ -24,12 +27,42 @@ const Photo = styled.img`
   border-radius: 15px;
 `;
 
-export const X = ({ username, photo, x }: ITweet) => {
+const DeleteBtn = styled.button`
+  background: skyblue;
+  color: white;
+  font-weight: 600;
+  border: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  border-radius: 5px;
+  cursor: pointer;
+`;
+
+export const X = ({ username, photo, x, userId, id }: ITweet) => {
+  const user = auth.currentUser;
+  const onDelete = async () => {
+    const ok = confirm("Are you sure you want to delete this X?");
+
+    if (!ok || user?.uid == userId) return;
+    try {
+      await deleteDoc(doc(db, "X", id));
+      if (photo) {
+        const photoRef = ref(storage, `X/${user?.uid}/${id}`);
+        await deleteObject(photoRef);
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+    }
+  };
   return (
     <Wrapper>
       <Column>
         <Username>{username}</Username>
         <Payload>{x}</Payload>
+        {user?.uid === userId ? (
+          <DeleteBtn onClick={onDelete}>Delete</DeleteBtn>
+        ) : null}
       </Column>
 
       {photo ? (
